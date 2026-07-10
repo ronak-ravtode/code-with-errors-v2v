@@ -132,7 +132,8 @@ router.post('/accept-invite', async (req, res) => {
       .update({
         guardian_user_id: guardianUserId,
         status: 'ACCEPTED',
-        is_accepted: true
+        is_accepted: true,
+        updated_at: new Date().toISOString()
       })
       .eq('invite_token', token)
       .select()

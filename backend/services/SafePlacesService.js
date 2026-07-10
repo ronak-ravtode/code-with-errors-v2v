@@ -1,23 +1,7 @@
 const axios = require('axios');
 
-// Simple Memory Cache to prevent Overpass 429 Rate Limits
-let placesCache = null;
-let lastCacheTime = 0;
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes cache
-
 async function getNearbySafePlaces(lat, lng, radius = 5000) { // Increase from 500m to 5000m (5km)
   try {
-    // Return cached places if within TTL (recalculate exact distances below)
-    if (placesCache && (Date.now() - lastCacheTime < CACHE_TTL_MS)) {
-      console.log('⚡ Returning safe places from memory cache (preventing 429 Rate Limit)');
-      const cachedPlaces = placesCache.map(place => ({
-        ...place,
-        distance: Math.round(calculateDistance(lat, lng, place.lat, place.lng))
-      }));
-      cachedPlaces.sort((a, b) => a.distance - b.distance);
-      return cachedPlaces;
-    }
-
     // Overpass API query for multiple categories
     const overpassQuery = `
       [out:json];
@@ -108,10 +92,6 @@ async function getNearbySafePlaces(lat, lng, radius = 5000) { // Increase from 5
 
     console.log(`✅ Found ${places.length} safe places within ${radius}m radius`);
     
-    // Store in cache
-    placesCache = places;
-    lastCacheTime = Date.now();
-
     return places;
 
   } catch (error) {

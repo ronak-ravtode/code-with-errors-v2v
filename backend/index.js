@@ -5,8 +5,6 @@ const { createClient } = require('@supabase/supabase-js');
 const multer = require('multer');
 
 const app = express();
-const authMiddleware = require('./middleware/auth');
-
 app.use(cors());
 app.use(express.json());
 
@@ -26,19 +24,16 @@ app.get('/', (req, res) => {
 // ==========================================
 // FEATURE ROUTES WILL GO HERE
 // ==========================================
+app.use('/api/ai', require('./routes/aiCompanion'));
 app.use('/api/auth', require('./routes/auth'));
-app.use('/api/profile', require('./routes/profile'));
-app.use('/api/ai', authMiddleware, require('./routes/aiCompanion'));
-app.use('/api/journey', authMiddleware, require('./routes/journey'));
-app.use('/api/guardian', authMiddleware, require('./routes/guardian'));
-app.use('/api/emergency', authMiddleware, require('./routes/emergency'));
+app.use('/api/journey', require('./routes/journey'));
+app.use('/api/guardian', require('./routes/guardian'));
+app.use('/api/emergency', require('./routes/emergency'));
 app.use('/api/evidence', require('./routes/evidence'));
 app.use('/api/learning', require('./routes/learning'));
-app.use('/api/admin', authMiddleware, require('./routes/admin'));
-app.use('/api/alerts', authMiddleware, require('./routes/alerts'));
-app.use('/api/reports', authMiddleware, require('./routes/reports'));
-app.use('/api/notifications', authMiddleware, require('./routes/notifications').router);
-app.use('/api/route', require('./routes/route'));
+app.use('/api/admin', require('./routes/admin'));
+app.use('/api/alerts', require('./routes/alerts'));
+app.use('/api/reports', require('./routes/reports'));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

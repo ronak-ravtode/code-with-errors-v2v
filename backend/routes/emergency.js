@@ -93,7 +93,7 @@ router.post('/end', async (req, res) => {
 
     // Cascade to close evidence vault if applicable
     if (incidentId) {
-       await EvidenceService.closeIncident(incidentId, 'Emergency ended by user.');
+       await EvidenceService.closeIncident(incidentId, journeyId, 'Emergency ended by user.');
     }
 
     res.json({ success: true });

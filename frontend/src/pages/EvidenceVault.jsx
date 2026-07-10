@@ -1,213 +1,126 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import React from 'react';
 import { motion } from 'framer-motion';
+import { Shield, Lock, FileAudio, Video, Map, Clock, Cloud, UploadCloud, ChevronRight, MapPin } from 'lucide-react';
+import Background from '../components/Background';
 
 export default function EvidenceVault() {
-  const { incidentId } = useParams();
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [incident, setIncident] = useState(null);
-  const [files, setFiles] = useState([]);
-  const [locations, setLocations] = useState([]);
-  const [notes, setNotes] = useState([]);
-  const [timeline, setTimeline] = useState([]);
-  const [guardianActions, setGuardianActions] = useState([]);
-
-  useEffect(() => {
-    fetchIncidentDetails();
-  }, [incidentId]);
-
-  const fetchIncidentDetails = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const { data } = await axios.get(
-        `http://localhost:3000/api/evidence/${incidentId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      setIncident(data.incident);
-      setFiles(data.files);
-      setLocations(data.locations);
-      setNotes(data.notes);
-      setTimeline(data.timeline);
-      setGuardianActions(data.guardianActions);
-    } catch (error) {
-      console.error('Error fetching incident:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDownloadPDF = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(
-        `http://localhost:3000/api/evidence/report/${incidentId}`,
-        { 
-          headers: { Authorization: `Bearer ${token}` },
-          responseType: 'blob'
-        }
-      );
-
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `incident-${incidentId}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (error) {
-      console.error('Error downloading PDF:', error);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-navy-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gold-500"></div>
-      </div>
-    );
-  }
+  const vaultItems = [
+    { type: 'audio', title: 'SOS Recording #8942', date: 'Oct 12, 2026 - 23:42', duration: '04:12', location: 'Sector 42, DLF', encrypted: true, synced: true },
+    { type: 'video', title: 'Auto-Capture Video', date: 'Oct 12, 2026 - 23:43', duration: '01:05', location: 'Sector 42, DLF', encrypted: true, synced: true },
+    { type: 'gps', title: 'Route Deviation Timeline', date: 'Sep 28, 2026 - 19:15', duration: '12:00', location: 'MG Road', encrypted: true, synced: true },
+    { type: 'audio', title: 'Voice Trigger Recording', date: 'Sep 10, 2026 - 18:30', duration: '00:45', location: 'Cyber City', encrypted: true, synced: false },
+  ];
 
   return (
-    <div className="min-h-screen bg-navy-900 p-4">
-      <div className="max-w-6xl mx-auto">
-        
+    <div className="min-h-screen relative font-sans overflow-hidden text-white pt-24 pb-32">
+      <div className="max-w-6xl mx-auto px-6">
+
         {/* Header */}
-        <div className="mb-8">
-          <button 
-            onClick={() => navigate(-1)}
-            className="text-navy-200 hover:text-gold-400 mb-4"
-          >
-            ← Back
-          </button>
-          <h1 className="text-3xl font-bold text-white mb-2">Evidence Vault</h1>
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 mb-12"
+        >
+          <div>
+            <div className="flex items-center gap-3 mb-3 text-royal">
+              <Lock className="w-6 h-6" />
+              <span className="font-bold tracking-widest uppercase text-sm">Military-Grade Encryption</span>
+            </div>
+            <h1 className="text-4xl md:text-6xl font-bold font-sora text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-500">
+              Evidence Vault
+            </h1>
+            <p className="text-gray-400 mt-2 max-w-lg">All emergency data is instantly encrypted and beamed to decentralized cloud storage. It cannot be deleted locally.</p>
+          </div>
+
+          <div className="flex items-center gap-4 bg-glass border border-glassBorder p-4 rounded-2xl shadow-xl">
+            <div className="w-12 h-12 rounded-full bg-emeraldLight/20 flex items-center justify-center">
+              <Cloud className="w-6 h-6 text-emeraldLight" />
+            </div>
+            <div>
+              <div className="text-sm text-gray-400 font-medium">Cloud Sync Status</div>
+              <div className="text-emeraldLight font-bold">100% Secured</div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Sync Simulation */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.2 }}
+          className="w-full bg-gradient-to-r from-royal/20 to-indigo/20 border border-royal/30 rounded-3xl p-6 mb-10 flex items-center justify-between"
+        >
           <div className="flex items-center gap-4">
-            <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-              incident.status === 'ACTIVE' 
-                ? 'bg-red-500/20 text-red-400' 
-                : 'bg-green-500/20 text-green-400'
-            }`}>
-              {incident.status}
-            </span>
-            <span className="text-navy-200">Type: {incident.type}</span>
-            <span className="text-navy-200">
-              {new Date(incident.started_at).toLocaleString()}
-            </span>
+            <div className="w-10 h-10 rounded-full bg-indigo/40 flex items-center justify-center animate-pulse">
+              <UploadCloud className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <div className="font-bold">Continuous Backup Active</div>
+              <div className="text-sm text-gray-300">Unsaid is currently monitoring network integrity.</div>
+            </div>
           </div>
-        </div>
+          <button className="px-6 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-full text-sm font-semibold transition-colors">
+            Force Verify
+          </button>
+        </motion.div>
 
-        {/* Evidence Files */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-white mb-4">Evidence Files</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {files.map((file) => (
-              <motion.div 
-                key={file.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-navy-800 border border-navy-700 rounded-xl p-4"
-              >
-                {file.file_type === 'IMAGE' ? (
-                  <img 
-                    src={file.file_url} 
-                    alt="Evidence" 
-                    className="w-full h-48 object-cover rounded-lg mb-3"
-                  />
-                ) : file.file_type === 'AUDIO' ? (
-                  <div className="bg-navy-900 rounded-lg p-4 mb-3">
-                    <audio controls className="w-full">
-                      <source src={file.file_url} type="audio/mpeg" />
-                    </audio>
-                  </div>
-                ) : null}
-                <p className="text-navy-200 text-sm">
-                  {new Date(file.uploaded_at).toLocaleString()}
-                </p>
-                <p className="text-navy-400 text-xs mt-1">
-                  {file.file_size ? `${(file.file_size / 1024 / 1024).toFixed(2)} MB` : ''}
-                </p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
+        {/* Vault List */}
+        <div className="space-y-4">
+          <h2 className="font-sora font-semibold text-xl mb-4 text-gray-300">Recent Captures</h2>
 
-        {/* Timeline */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-white mb-4">Timeline</h2>
-          <div className="bg-navy-800 border border-navy-700 rounded-xl p-6">
-            <div className="space-y-4">
-              {timeline.map((event, index) => (
-                <div key={index} className="flex items-start gap-4">
-                  <div className="w-2 h-2 bg-gold-500 rounded-full mt-2" />
-                  <div>
-                    <p className="text-white font-semibold">{event.title}</p>
-                    <p className="text-navy-400 text-sm">
-                      {new Date(event.created_at).toLocaleString()}
-                    </p>
-                    {event.description && (
-                      <p className="text-navy-300 text-sm mt-1">{event.description}</p>
-                    )}
+          {vaultItems.map((item, idx) => (
+            <motion.div
+              key={idx}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 + (idx * 0.1) }}
+              className="group relative bg-card/60 backdrop-blur-md border border-glassBorder rounded-2xl p-4 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:bg-glass hover:border-gray-600 transition-all cursor-pointer overflow-hidden"
+            >
+              {/* Highlight bar */}
+              <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-royal to-electric opacity-0 group-hover:opacity-100 transition-opacity"></div>
+
+              <div className="flex items-center gap-6">
+                <div className={`w-14 h-14 rounded-full flex items-center justify-center shrink-0 ${item.type === 'audio' ? 'bg-pink-500/20 text-pink-400' :
+                  item.type === 'video' ? 'bg-blue-500/20 text-blue-400' : 'bg-emerald-500/20 text-emerald-400'
+                  }`}>
+                  {item.type === 'audio' && <FileAudio className="w-6 h-6" />}
+                  {item.type === 'video' && <Video className="w-6 h-6" />}
+                  {item.type === 'gps' && <Map className="w-6 h-6" />}
+                </div>
+
+                <div>
+                  <h3 className="font-bold text-lg">{item.title}</h3>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-2 text-sm text-gray-400">
+                    <span className="flex items-center gap-1"><Clock className="w-4 h-4" /> {item.date} • {item.duration}</span>
+                    <span className="flex items-center gap-1"><MapPin className="w-4 h-4" /> {item.location}</span>
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Location Trail */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-white mb-4">Location Trail</h2>
-          <div className="bg-navy-800 border border-navy-700 rounded-xl p-6">
-            <p className="text-navy-200">
-              {locations.length} location points recorded
-            </p>
-            <div className="mt-4 h-64 bg-navy-900 rounded-lg flex items-center justify-center">
-              <p className="text-navy-400">Map visualization would go here</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Notes */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-white mb-4">Notes</h2>
-          <div className="space-y-4">
-            {notes.map((note) => (
-              <div key={note.id} className="bg-navy-800 border border-navy-700 rounded-xl p-4">
-                <p className="text-white">{note.note}</p>
-                <p className="text-navy-400 text-sm mt-2">
-                  By {note.created_by_name} • {new Date(note.created_at).toLocaleString()}
-                </p>
               </div>
-            ))}
-          </div>
-        </div>
 
-        {/* Actions */}
-        <div className="flex gap-4 mb-8">
-          <button
-            onClick={handleDownloadPDF}
-            className="px-6 py-3 bg-gold-500 hover:bg-gold-400 text-navy-900 font-semibold rounded-xl transition-all"
-          >
-            Download PDF Report
-          </button>
-          {incident.status === 'ACTIVE' && (
-            <button
-              onClick={async () => {
-                const token = localStorage.getItem('token');
-                await axios.post(
-                  `http://localhost:3000/api/evidence/close`,
-                  { incidentId },
-                  { headers: { Authorization: `Bearer ${token}` } }
-                );
-                fetchIncidentDetails();
-              }}
-              className="px-6 py-3 bg-royal-500 hover:bg-royal-600 text-white font-semibold rounded-xl transition-all"
-            >
-              Close Incident
-            </button>
-          )}
+              <div className="flex flex-row md:flex-col items-center md:items-end justify-between gap-4 md:gap-2">
+                <div className="flex gap-2">
+                  {item.encrypted && (
+                    <div className="bg-gray-800/80 border border-gray-700 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1 text-goldLight">
+                      <Lock className="w-3 h-3" /> Encrypted
+                    </div>
+                  )}
+                  {item.synced ? (
+                    <div className="bg-emerald-900/40 border border-emerald-900/50 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1 text-emeraldLight">
+                      <Cloud className="w-3 h-3" /> Synced
+                    </div>
+                  ) : (
+                    <div className="bg-yellow-900/40 border border-yellow-900/50 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1 text-yellow-500 animate-pulse">
+                      <UploadCloud className="w-3 h-3" /> Syncing...
+                    </div>
+                  )}
+                </div>
+
+                <div className="hidden md:flex items-center text-gray-500 group-hover:text-white transition-colors text-sm font-semibold">
+                  View Data <ChevronRight className="w-4 h-4 ml-1" />
+                </div>
+              </div>
+            </motion.div>
+          ))}
         </div>
 
       </div>

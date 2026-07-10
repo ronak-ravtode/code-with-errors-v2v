@@ -69,7 +69,7 @@ async function getHistory(userId) {
     .from('emergency_sessions')
     .select('*')
     .eq('user_id', userId)
-    .order('created_at', { ascending: false });
+    .order('started_at', { ascending: false });
 
   if (error) throw error;
   return data;

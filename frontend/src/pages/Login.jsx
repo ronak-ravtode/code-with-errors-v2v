@@ -1,346 +1,208 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Mail, 
-  Lock, 
-  ShieldCheck, 
-  Fingerprint, 
-  Globe, 
-  Activity, 
-  MapPin, 
-  CheckCircle2, 
-  EyeOff, 
-  Eye, 
-  Loader2,
-  Cpu,
-  Wifi,
-  Navigation
-} from 'lucide-react';
-import { authService } from '../services/auth';
-import { useAppStore } from '../store/useAppStore';
+import { Link, useNavigate } from 'react-router-dom';
+import { Shield, Mail, Lock, Eye, EyeOff, ArrowRight, Loader2, AlertCircle, CheckCircle, Info } from 'lucide-react';
+import axios from 'axios';
+import { supabase } from '../lib/supabase';
 
-// Import the background image you saved in the frontend folder
-import bgImage from '../../background.png';
-
-const BackgroundEffects = () => {
-  return (
-    <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-      {/* Background Image - Using the exact file you uploaded */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-10000"
-        style={{ 
-          backgroundImage: `url(${bgImage})`, 
-          transform: 'scale(1.05)' 
-        }} 
-      />
-      
-      {/* Dark Overlay & Radial Glow */}
-      <div className="absolute inset-0 bg-slate-900/40 mix-blend-multiply" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.15)_0%,transparent_100%)]" />
-
-      {/* Floating Particles / Map Pins */}
-      {[...Array(6)].map((_, i) => (
-        <motion.div
-          key={i}
-          initial={{ y: Math.random() * 800, x: Math.random() * 1200, opacity: 0 }}
-          animate={{ 
-            y: [null, Math.random() * 800], 
-            opacity: [0, 0.5, 0],
-            scale: [0.5, 1, 0.5]
-          }}
-          transition={{ duration: 10 + Math.random() * 10, repeat: Infinity, ease: 'linear' }}
-          className="absolute"
-        >
-          <MapPin className="text-blue-500/30 w-6 h-6 blur-[1px]" />
-        </motion.div>
-      ))}
-
-      {/* AI Pulses */}
-      {[...Array(4)].map((_, i) => (
-        <motion.div
-          key={`pulse-${i}`}
-          className="absolute rounded-full bg-blue-500/20 blur-xl"
-          style={{
-            width: Math.random() * 200 + 100,
-            height: Math.random() * 200 + 100,
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-          }}
-          animate={{
-            scale: [1, 1.5, 1],
-            opacity: [0.1, 0.3, 0.1],
-          }}
-          transition={{ duration: 5 + Math.random() * 5, repeat: Infinity, ease: 'easeInOut' }}
-        />
-      ))}
-    </div>
-  );
-};
-
-const FloatingBadge = ({ icon: Icon, text, delay, style }) => (
-  <motion.div
-    initial={{ opacity: 0, x: -20 }}
-    animate={{ opacity: 1, x: 0 }}
-    transition={{ delay, duration: 0.8, ease: 'easeOut' }}
-    className="hidden lg:flex items-center gap-3 px-4 py-3 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 shadow-xl absolute"
-    style={style}
-  >
-    <div className="bg-blue-500/20 p-2 rounded-full">
-      <Icon className="w-4 h-4 text-blue-400" />
-    </div>
-    <span className="text-sm font-medium text-white/90">{text}</span>
-  </motion.div>
-);
-
-const FloatingCard = ({ title, value, status, icon: Icon, delay, style }) => (
-  <motion.div
-    initial={{ opacity: 0, x: 20 }}
-    animate={{ opacity: 1, x: 0 }}
-    transition={{ delay, duration: 0.8, ease: 'easeOut' }}
-    className="hidden lg:flex flex-col gap-2 p-5 rounded-[24px] bg-white/5 backdrop-blur-md border border-white/10 shadow-2xl absolute min-w-[200px]"
-    style={style}
-  >
-    <div className="flex justify-between items-center mb-1">
-      <Icon className="w-5 h-5 text-purple-400" />
-      <span className="text-[10px] uppercase tracking-widest font-bold text-green-400 bg-green-400/10 px-2 py-1 rounded-full">
-        {status}
-      </span>
-    </div>
-    <div className="text-3xl font-bold text-white">{value}</div>
-    <div className="text-xs text-white/50 uppercase tracking-wider">{title}</div>
-  </motion.div>
-);
-
-const GlassInput = ({ icon: Icon, label, type, value, onChange, placeholder, isValid }) => {
-  const [isFocused, setIsFocused] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  
-  const inputType = type === 'password' ? (showPassword ? 'text' : 'password') : type;
-
-  return (
-    <motion.div 
-      className="relative group"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-    >
-      {/* Floating Label */}
-      <motion.label 
-        className={`absolute left-[52px] pointer-events-none transition-all duration-300 z-10 ${
-          isFocused || value ? '-top-2.5 text-xs text-blue-400 bg-[#0F172A] px-2 rounded-full' : 'top-5 text-sm text-white/40'
-        }`}
-      >
-        {label}
-      </motion.label>
-
-      {/* Input Container */}
-      <div className={`
-        relative h-[60px] flex items-center rounded-[18px] bg-[rgba(255,255,255,0.03)] 
-        border transition-all duration-500 backdrop-blur-sm overflow-hidden
-        ${isFocused ? 'border-blue-500/50 shadow-[0_0_20px_rgba(59,130,246,0.15)] bg-[rgba(255,255,255,0.06)]' : 'border-white/10 hover:border-white/20'}
-      `}>
-        {/* Animated Background Glow on Focus */}
-        <AnimatePresence>
-          {isFocused && (
-            <motion.div 
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 z-0"
-            />
-          )}
-        </AnimatePresence>
-
-        {/* Left Icon */}
-        <div className="pl-4 pr-3 relative z-10">
-          <Icon className={`w-5 h-5 transition-colors duration-300 ${isFocused ? 'text-blue-400' : 'text-white/40'}`} />
-        </div>
-
-        {/* Input */}
-        <input
-          type={inputType}
-          value={value}
-          onChange={onChange}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          placeholder={isFocused ? placeholder : ''}
-          required
-          className="flex-1 bg-transparent border-none outline-none text-white text-sm font-medium relative z-10 placeholder-white/20 h-full py-2"
-          style={{ fontFamily: "'Plus Jakarta Sans', 'General Sans', sans-serif" }}
-        />
-
-        {/* Right Icons */}
-        <div className="pr-4 pl-2 flex items-center gap-2 relative z-10">
-          {type === 'password' && (
-            <button type="button" onClick={() => setShowPassword(!showPassword)} className="text-white/30 hover:text-white/60 transition-colors">
-              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            </button>
-          )}
-          {isValid && value.length > 0 && type !== 'password' && (
-            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
-              <CheckCircle2 className="w-4 h-4 text-green-400" />
-            </motion.div>
-          )}
-        </div>
-      </div>
-    </motion.div>
-  );
-};
+const BACKEND = 'http://localhost:3000';
 
 export default function Login() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [loginType, setLoginType] = useState('user'); // 'user' or 'guardian'
+  const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
-  const setUser = useAppStore(state => state.setUser);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [focused, setFocused] = useState('');
+  const [showGoogleDesc, setShowGoogleDesc] = useState(false);
 
-  const handleLogin = async (e) => {
+  async function handleLogin(e) {
     e.preventDefault();
-    setError('');
-    setLoading(true);
+    setError(''); setSuccess('');
+    if (!email || !password) { setError('Please fill in all fields.'); return; }
 
+    setLoading(true);
     try {
-      const { user } = await authService.login(email, password);
-      setUser(user);
-      
-      if (user.role === 'guardian') {
-        navigate('/guardian/dashboard');
-      } else {
-        navigate('/user/home');
-      }
+      const { data } = await axios.post(`${BACKEND}/api/auth/login`, { email, password });
+
+      // Save JWT + user info to localStorage
+      localStorage.setItem('ss_token', data.token);
+      localStorage.setItem('ss_user', JSON.stringify(data.user));
+
+      setSuccess(`Welcome back, ${data.user.full_name || data.user.email}! Redirecting…`);
+
+      const destination = data.user.role === 'guardian' ? '/guardian-dashboard' : '/dashboard';
+      setTimeout(() => navigate(destination), 1000);
     } catch (err) {
-      setError(err.response?.data?.error || err.message || 'Authentication failed');
+      const msg = err.response?.data?.error || 'Login failed. Please try again.';
+      setError(msg);
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  async function handleGoogleLogin() {
+    // Note to user: Google OAuth requires configuring GCP Client ID + Supabase Dashboard
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/dashboard` }
+    });
+    if (error) setError(error.message);
+  }
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-transparent" style={{ fontFamily: "'Plus Jakarta Sans', 'General Sans', sans-serif" }}>
-      <BackgroundEffects />
+    <div className="min-h-screen bg-[#09090b] flex items-center justify-center p-4 relative overflow-hidden py-12">
+      {/* Ambient blobs */}
+      <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-violet-700/20 blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-20%] right-[-10%] w-[400px] h-[400px] rounded-full bg-blue-600/20 blur-[120px] pointer-events-none" />
 
-      {/* Floating Badges (Left) */}
-      <FloatingBadge icon={ShieldCheck} text="AI Protection Enabled" delay={0.2} style={{ top: '20%', left: '5%' }} />
-      <FloatingBadge icon={Lock} text="End-to-End Encryption" delay={0.4} style={{ top: '40%', left: '8%' }} />
-      <FloatingBadge icon={Activity} text="Real-Time Alerts" delay={0.6} style={{ bottom: '25%', left: '6%' }} />
-
-      {/* Floating Cards (Right) */}
-      <FloatingCard title="Safety Score" value="98" status="OPTIMAL" icon={Cpu} delay={0.3} style={{ top: '15%', right: '5%' }} />
-      <FloatingCard title="AI Monitoring" value="Active" status="ENABLED" icon={Wifi} delay={0.5} style={{ top: '45%', right: '7%' }} />
-      <FloatingCard title="Guardian Network" value="Connected" status="LIVE" icon={Navigation} delay={0.7} style={{ bottom: '20%', right: '5%' }} />
-
-      {/* Main Authentication Card */}
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.8, type: 'spring', bounce: 0.4 }}
-        className="relative z-10 w-full max-w-[520px] mx-4 rounded-[32px] overflow-hidden"
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: 'easeOut' }}
+        className="w-full max-w-md relative z-10"
       >
-        {/* Glassmorphism Background */}
-        <div className="absolute inset-0 bg-[rgba(255,255,255,0.08)] backdrop-blur-[25px] border border-white/10 shadow-[0_0_80px_rgba(59,130,246,0.15)] rounded-[32px]" />
-        
-        {/* Soft Inner Highlight */}
-        <div className="absolute inset-0 rounded-[32px] border border-white/5 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
-
-        <div className="relative z-10 p-10 md:p-12 flex flex-col h-full">
-          
-          {/* Logo Section */}
-          <motion.div 
-            initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-            className="flex flex-col items-center text-center mb-10"
+        <div className="flex flex-col items-center mb-8">
+          <motion.div
+            whileHover={{ rotate: [0, -5, 5, 0], scale: 1.05 }}
+            transition={{ duration: 0.4 }}
+            className={`w-16 h-16 rounded-2xl bg-gradient-to-br flex items-center justify-center mb-4 shadow-[0_0_40px_rgba(109,40,217,0.4)] ${loginType === 'user' ? 'from-violet-600 to-blue-500' : 'from-pink-600 to-orange-500'}`}
           >
-            <div className="relative mb-6 group">
-              <div className="absolute inset-0 bg-blue-500/30 blur-2xl rounded-full scale-150 group-hover:bg-purple-500/30 transition-colors duration-1000" />
-              <div className="w-20 h-20 rounded-[24px] bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-2xl relative z-10 border border-white/20">
-                <ShieldCheck className="w-10 h-10 text-white" />
+            <Shield className="w-8 h-8 text-white" />
+          </motion.div>
+
+          <div className="flex bg-white/5 border border-white/10 rounded-full p-1 mb-6">
+            <button
+              onClick={() => setLoginType('user')}
+              className={`px-6 py-2 rounded-full text-sm font-semibold transition-all ${loginType === 'user' ? 'bg-violet-600 text-white' : 'text-gray-400 hover:text-white'}`}
+            >
+              User Login
+            </button>
+            <button
+              onClick={() => setLoginType('guardian')}
+              className={`px-6 py-2 rounded-full text-sm font-semibold transition-all ${loginType === 'guardian' ? 'bg-pink-600 text-white' : 'text-gray-400 hover:text-white'}`}
+            >
+              Guardian Login
+            </button>
+          </div>
+
+          <h1 className="text-3xl font-bold text-white tracking-tight">
+            {loginType === 'user' ? 'User Portal' : 'Guardian Portal'}
+          </h1>
+          <p className="text-gray-400 text-sm mt-1">
+            {loginType === 'user' ? 'Sign in to access your safety dashboard' : 'Sign in to monitor emergency alerts'}
+          </p>
+        </div>
+
+        {/* Card */}
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl">
+          <form onSubmit={handleLogin} className="space-y-5" noValidate>
+
+            {/* Email */}
+            <div>
+              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Email Address</label>
+              <div
+                className="flex items-center gap-3 bg-white/5 border rounded-xl px-4 py-3 transition-all duration-200"
+                style={{ borderColor: focused === 'email' ? 'rgba(109,40,217,0.8)' : 'rgba(255,255,255,0.1)' }}
+              >
+                <Mail className={`w-4 h-4 shrink-0 transition-colors ${focused === 'email' ? 'text-violet-400' : 'text-gray-500'}`} />
+                <input
+                  type="email" value={email} onChange={e => setEmail(e.target.value)}
+                  onFocus={() => setFocused('email')} onBlur={() => setFocused('')}
+                  placeholder="you@example.com"
+                  className="flex-1 bg-transparent outline-none text-white text-sm placeholder-gray-600"
+                />
               </div>
             </div>
-            <h1 className="text-3xl font-bold text-white tracking-tight mb-2">SafeSphere</h1>
-            <p className="text-[11px] uppercase tracking-[0.2em] font-semibold text-blue-300/80">AI Powered Women's Safety</p>
-          </motion.div>
 
-          {/* Welcome Text */}
-          <motion.div 
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
-            className="mb-10 text-center md:text-left"
-          >
-            <h2 className="text-2xl font-bold text-white mb-2">Welcome Back</h2>
-            <p className="text-white/50 text-sm">Protecting every journey with AI-powered safety.</p>
-          </motion.div>
-
-          {/* Error Message */}
-          <AnimatePresence>
-            {error && (
-              <motion.div 
-                initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                className="mb-6 overflow-hidden"
+            {/* Password */}
+            <div>
+              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Password</label>
+              <div
+                className="flex items-center gap-3 bg-white/5 border rounded-xl px-4 py-3 transition-all duration-200"
+                style={{ borderColor: focused === 'pw' ? 'rgba(109,40,217,0.8)' : 'rgba(255,255,255,0.1)' }}
               >
-                <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-[16px] flex items-center gap-3">
-                  <div className="w-1 h-8 bg-red-500 rounded-full" />
-                  <p className="text-red-200 text-sm font-medium">{error}</p>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Form */}
-          <form onSubmit={handleLogin} className="flex-1 flex flex-col">
-            <div className="space-y-4 mb-8">
-              <GlassInput 
-                icon={Mail} 
-                label="Email Address" 
-                type="email" 
-                value={email} 
-                onChange={(e) => setEmail(e.target.value)} 
-                placeholder="you@example.com"
-                isValid={email.includes('@') && email.includes('.')}
-              />
-              <GlassInput 
-                icon={Lock} 
-                label="Password" 
-                type="password" 
-                value={password} 
-                onChange={(e) => setPassword(e.target.value)} 
-                placeholder="••••••••"
-              />
-              <div className="flex justify-between items-center px-2 pt-2">
-                <label className="flex items-center gap-2 cursor-pointer group">
-                  <div className="w-4 h-4 rounded border border-white/20 group-hover:border-blue-400 flex items-center justify-center transition-colors">
-                    <div className="w-2 h-2 rounded-sm bg-transparent group-hover:bg-blue-400 transition-colors" />
-                  </div>
-                  <span className="text-xs text-white/50 font-medium transition-colors group-hover:text-white/80">Remember me</span>
-                </label>
-                <button type="button" className="text-xs font-semibold text-blue-400 hover:text-blue-300 transition-colors">
-                  Forgot Password?
+                <Lock className={`w-4 h-4 shrink-0 transition-colors ${focused === 'pw' ? 'text-violet-400' : 'text-gray-500'}`} />
+                <input
+                  type={showPw ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
+                  onFocus={() => setFocused('pw')} onBlur={() => setFocused('')}
+                  placeholder="••••••••"
+                  className="flex-1 bg-transparent outline-none text-white text-sm placeholder-gray-600"
+                />
+                <button type="button" onClick={() => setShowPw(p => !p)} className="text-gray-500 hover:text-gray-300 transition">
+                  {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
             </div>
 
-            {/* Submit Button */}
-            <motion.button
-              whileHover={{ scale: 1.02, y: -2 }}
-              whileTap={{ scale: 0.98 }}
-              type="submit"
-              disabled={loading}
-              className="w-full h-[56px] rounded-[18px] bg-gradient-to-r from-[#7C3AED] to-[#3B82F6] text-white font-bold text-lg shadow-[0_10px_30px_rgba(59,130,246,0.3)] hover:shadow-[0_15px_40px_rgba(59,130,246,0.5)] transition-all flex items-center justify-center relative overflow-hidden group mb-6 disabled:opacity-70"
-            >
-              <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-              {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : 'Login'}
-            </motion.button>
+            {/* Error / Success */}
+            <AnimatePresence>
+              {error && (
+                <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                  className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-sm text-red-400">
+                  <AlertCircle className="w-4 h-4 shrink-0" /> {error}
+                </motion.div>
+              )}
+              {success && (
+                <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                  className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-4 py-3 text-sm text-emerald-400">
+                  <CheckCircle className="w-4 h-4 shrink-0" /> {success}
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-            {/* Footer */}
-            <div className="text-center mt-2">
-              <p className="text-sm text-white/50">
-                Don't have an account?{' '}
-                <Link to="/signup" className="text-blue-400 font-bold hover:text-blue-300 transition-colors">
-                  Sign up
-                </Link>
-              </p>
-            </div>
+            {/* Submit */}
+            <motion.button
+              type="submit" disabled={loading}
+              whileHover={{ scale: loading ? 1 : 1.02 }}
+              whileTap={{ scale: loading ? 1 : 0.98 }}
+              className={`w-full py-3.5 rounded-xl font-bold text-white text-sm bg-gradient-to-r transition disabled:opacity-60 flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(109,40,217,0.3)] ${loginType === 'user' ? 'from-violet-600 to-blue-500' : 'from-pink-600 to-orange-500'}`}
+            >
+              {loading
+                ? <><Loader2 className="w-4 h-4 animate-spin" /> Signing in…</>
+                : <><span>Sign In</span><ArrowRight className="w-4 h-4" /></>
+              }
+            </motion.button>
           </form>
 
+          {/* Divider */}
+          <div className="flex items-center gap-3 my-6">
+            <div className="flex-1 h-px bg-white/10" />
+            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest relative group cursor-pointer" onMouseEnter={() => setShowGoogleDesc(true)} onMouseLeave={() => setShowGoogleDesc(false)}>
+              OR CONNECT WITH <Info className="w-3 h-3 inline pb-0.5" />
+              {showGoogleDesc && (
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 border border-gray-700 text-gray-300 text-[10px] rounded leading-relaxed text-center z-20">
+                  Requires configuring OAuth Credentials in Google Cloud Console and adding them to Supabase Dashboard.
+                </div>
+              )}
+            </span>
+            <div className="flex-1 h-px bg-white/10" />
+          </div>
+
+          <motion.button
+            whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+            onClick={handleGoogleLogin}
+            className="w-full py-3.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white font-semibold hover:bg-white/10 transition flex items-center justify-center gap-3"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 48 48">
+              <path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 2.9l5.7-5.7C34 6.5 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z" />
+              <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.1 19 12 24 12c3.1 0 5.8 1.1 8 2.9l5.7-5.7C34 6.5 29.3 4 24 4 16.3 4 9.6 8.3 6.3 14.7z" />
+              <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.3 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8H6.3C9.6 35.7 16.3 44 24 44z" />
+              <path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.3 5.6l6.2 5.2C36.9 39.1 44 34 44 24c0-1.3-.1-2.6-.4-3.9z" />
+            </svg>
+            Sign in with Google
+          </motion.button>
+
         </div>
+
+        <p className="text-center text-sm text-gray-500 mt-6">
+          Don't have an account?{' '}
+          <Link to="/register" className="text-violet-400 hover:text-violet-300 font-semibold transition">Create one</Link>
+        </p>
       </motion.div>
     </div>
   );
 }
-

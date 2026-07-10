@@ -33,25 +33,6 @@ router.post('/location', async (req, res) => {
     }
 
     const result = await processNewLocation(journeyId, latitude, longitude, speed || 0);
-
-    // --- ALERT ENGINE INTEGRATION ---
-    const AlertEngine = require('../services/AlertEngine');
-    
-    // We need userId for alerts. Assuming result contains it, or we fetch it.
-    // If result.journey.user_id exists, use it. Otherwise, use a default/null if not easily accessible here.
-    // To be safe, we'll extract it from result if possible.
-    const userId = result?.journey?.user_id || req.body.userId || '550e8400-e29b-41d4-a716-446655440000';
-
-    // Run alert engine asynchronously so it doesn't block the location response
-    AlertEngine.evaluateRoute(journeyId, userId, latitude, longitude)
-      .then(alertResult => {
-        if (alertResult.newAlerts.length > 0) {
-          console.log(`🚨 Generated ${alertResult.newAlerts.length} smart alerts!`);
-        }
-      })
-      .catch(err => console.error('Alert engine failed:', err));
-    // --- END ALERT ENGINE ---
-
     res.json(result);
   } catch (error) {
     console.error('Error processing location:', error);
@@ -134,60 +115,12 @@ router.post('/deviation', async (req, res) => {
 // POST /api/journey/emergency
 router.post('/emergency', async (req, res) => {
   try {
-    // The snippet requires journeyId, userId, latitude, longitude
-    const { journeyId, userId, latitude, longitude } = req.body;
-    
+    const { journeyId } = req.body;
     if (!journeyId) return res.status(400).json({ error: 'Missing journeyId' });
-
-    // Ensure we trigger the existing logic as well, but now we integrate the new explicit steps
+    
     const { triggerEmergency } = require('../services/JourneyService');
     const result = await triggerEmergency(journeyId);
-    
-    // Resolve user ID if not provided in body
-    const resolvedUserId = userId || result?.journey?.user_id || '550e8400-e29b-41d4-a716-446655440000';
-    
-    const { supabase } = require('../utils/supabase');
-    const EvidenceService = require('../services/EvidenceService');
-
-    // 1. Create/Update Emergency Session
-    const { data: session, error: sessionError } = await supabase
-      .from('emergency_sessions')
-      .insert({
-        journey_id: journeyId,
-        user_id: resolvedUserId,
-        status: 'ACTIVE',
-        last_latitude: latitude || result?.journey?.destination_lat || 0,
-        last_longitude: longitude || result?.journey?.destination_lng || 0,
-        started_at: new Date().toISOString()
-      })
-      .select()
-      .single();
-
-    if (sessionError) {
-      console.error('Session error, it may already exist or table missing:', sessionError);
-      // We don't throw to not break existing flow if table isn't strictly ready
-    }
-
-    // 2. Start Evidence Vault
-    let incidentId = null;
-    try {
-      const evidenceResult = await EvidenceService.startIncident(journeyId, resolvedUserId, 'SOS');
-      incidentId = evidenceResult.incidentId;
-    } catch (e) {
-      console.error('Error starting incident:', e);
-    }
-
-    // Trigger Web Push Notification for Guardians
-    const { sendSOSAlert } = require('./notifications');
-    await sendSOSAlert(journeyId, resolvedUserId);
-
-    res.json({ 
-      success: true, 
-      sessionId: session?.id, 
-      incidentId: incidentId,
-      ...result
-    });
-
+    res.json(result);
   } catch (error) {
     console.error('Error triggering emergency:', error);
     res.status(500).json({ error: error.message });

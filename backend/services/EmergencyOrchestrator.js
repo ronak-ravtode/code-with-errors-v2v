@@ -18,8 +18,7 @@ async function triggerEmergencyCascade(journeyId, userId, lat, lng) {
 
     // 2. Start Evidence Vault (Timeline started, Audio started)
     try {
-      const evidenceResult = await EvidenceService.startEvidenceCollection(journeyId, userId, 'SOS');
-      await EvidenceService.saveIncidentLocation(evidenceResult.incidentId, lat, lng);
+      await EvidenceService.startIncident(journeyId, userId, 'SOS');
       await EmergencyService.updateSessionStatus(sessionId, { audio_started: true, timeline_started: true });
       await EmergencyService.logAction(sessionId, 'EVIDENCE', 'Evidence Vault Active', 'Tamper-proof vault started.');
     } catch (e) {

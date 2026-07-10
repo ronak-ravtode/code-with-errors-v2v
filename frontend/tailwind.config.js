@@ -7,25 +7,37 @@ export default {
   theme: {
     extend: {
       colors: {
-        navy: {
-          900: '#0F172A', // Main app background
-          800: '#1E293B', // Card/Panel backgrounds
-          700: '#334155', // Borders and dividers
-          600: '#475569', // Muted text
-        },
-        royal: {
-          600: '#1E3A8A', // Secondary buttons, active states
-          500: '#3B82F6', // Primary interactive elements, links
-        },
-        gold: {
-          500: '#F59E0B', // SOS Button, Critical Alerts
-          400: '#FBBF24', // Gold hover states
-          300: '#FCD34D', // Gold text highlights
-        },
-        copper: '#D97706', // Warnings
+        background: '#09090b', // Deep dark
+        royal: '#6d28d9', // violet-700
+        indigo: '#4f46e5', // indigo-600
+        electric: '#3b82f6', // blue-500
+        glass: 'rgba(255, 255, 255, 0.05)',
+        glassBorder: 'rgba(255, 255, 255, 0.1)',
+        pinkAccent: '#ec4899', // pink-500
+        emeraldLight: '#10b981', // emerald-500
+        goldLight: '#f59e0b', // amber-500
+        danger: '#ef4444', // red-500
+        card: '#18181b', // zinc-900
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'], // Ensure a clean, modern font
+        sans: ['Space Grotesk', 'Outfit', 'Sora', 'sans-serif'],
+        outfit: ['Outfit', 'sans-serif'],
+      },
+      animation: {
+        'blob': 'blob 7s infinite',
+        'aurora': 'aurora 15s linear infinite',
+      },
+      keyframes: {
+        blob: {
+          '0%': { transform: 'translate(0px, 0px) scale(1)' },
+          '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+          '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+          '100%': { transform: 'translate(0px, 0px) scale(1)' },
+        },
+        aurora: {
+          '0%, 100%': { backgroundPosition: '0% 50%' },
+          '50%': { backgroundPosition: '100% 50%' },
+        }
       }
     },
   },

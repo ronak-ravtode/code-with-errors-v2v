@@ -75,7 +75,7 @@ const MapUpdater = ({ center, isGuardianView }) => {
   return null;
 };
 
-export default function LiveMap({ userLocation, destinationLocation, routePolyline, isGuardianView }) {
+export default function LiveMap({ userLocation, destinationLocation, polyline, isGuardianView }) {
   const defaultCenter = userLocation || { lat: 22.307, lng: 73.181 };
   const [apiSafePlaces, setApiSafePlaces] = useState([]);
   
@@ -139,14 +139,14 @@ export default function LiveMap({ userLocation, destinationLocation, routePolyli
         <div className="absolute top-4 right-4 z-[1001]">
           <button 
             onClick={() => setShowFilters(!showFilters)}
-            className="bg-navy-900/90 backdrop-blur text-white px-4 py-2 rounded-xl border border-navy-700 shadow-xl font-bold flex items-center space-x-2 transition-transform hover:scale-105"
+            className="bg-gray-900/90 backdrop-blur text-white px-4 py-2 rounded-xl border border-gray-700 shadow-xl font-bold flex items-center space-x-2 transition-transform hover:scale-105"
           >
             <span>🧭</span>
             <span>Filters</span>
           </button>
           
           {showFilters && (
-            <div className="mt-2 bg-navy-900/95 backdrop-blur-md border border-navy-700 p-4 rounded-xl shadow-2xl w-56 flex flex-col space-y-2">
+            <div className="mt-2 bg-gray-900/95 backdrop-blur-md border border-gray-700 p-4 rounded-xl shadow-2xl w-56 flex flex-col space-y-2">
               <h4 className="text-white text-sm font-bold mb-2">Show on Map</h4>
               {Object.keys(filters).map(key => (
                 <label key={key} className="flex items-center space-x-3 cursor-pointer group">
@@ -154,7 +154,7 @@ export default function LiveMap({ userLocation, destinationLocation, routePolyli
                     type="checkbox" 
                     checked={filters[key]}
                     onChange={() => toggleFilter(key)}
-                    className="form-checkbox h-4 w-4 text-royal-500 rounded bg-navy-800 border-gray-600 focus:ring-0 focus:ring-offset-0"
+                    className="form-checkbox h-4 w-4 text-blue-500 rounded bg-gray-800 border-gray-600 focus:ring-0 focus:ring-offset-0"
                   />
                   <span className="text-gray-300 text-sm group-hover:text-white capitalize">
                     {key.replace(/_/g, ' ')}
@@ -191,16 +191,8 @@ export default function LiveMap({ userLocation, destinationLocation, routePolyli
         )}
 
         {/* Route Polyline */}
-        {routePolyline && routePolyline.length > 0 && (
-          <Polyline 
-            positions={routePolyline} 
-            pathOptions={{ 
-              color: '#F59E0B', 
-              weight: 5, 
-              opacity: 0.8,
-              dashArray: '10, 10' 
-            }} 
-          />
+        {polyline && polyline.length > 0 && (
+          <Polyline positions={polyline} color="#10b981" weight={4} opacity={0.8} />
         )}
 
         {/* Safe Places */}

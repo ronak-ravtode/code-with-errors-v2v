@@ -1,67 +1,59 @@
-import React, { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { authService } from './services/auth';
-import { useAppStore } from './store/useAppStore';
-
+import { Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
-import Signup from './pages/Signup';
-import UserHome from './pages/UserHome';
-import GuardianDashboard from './pages/GuardianDashboard';
-import EmergencyScreen from './pages/EmergencyScreen';
+import Register from './pages/Register';
+import Dashboard from './pages/Dashboard';
+import Profile from './pages/Profile';
+import LiveJourneyTracking from './pages/LiveJourneyTracking';
 import AIChat from './pages/AIChat';
-import InviteGuardian from './pages/InviteGuardian';
-import GuardianInviteLanding from './pages/GuardianInviteLanding';
-import LearningHub from './pages/LearningHub';
-import LessonView from './pages/LessonView';
-import ProtectedRoute from './components/ProtectedRoute';
-import EvidenceList from './pages/EvidenceList';
 import EvidenceVault from './pages/EvidenceVault';
-import ProfileDashboard from './pages/ProfileDashboard';
+import EmergencyCommandCenter from './pages/EmergencyCommandCenter';
+import CommunitySafetyMap from './pages/CommunitySafetyMap';
+import GuardianDashboard from './pages/GuardianDashboard';
 
-function App() {
-  const setUser = useAppStore(state => state.setUser);
-  
-  // Hydrate global state on mount
-  useEffect(() => {
-    const user = authService.getCurrentUser();
-    if (user) {
-      setUser(user);
-    }
-  }, [setUser]);
+import { Navigate } from 'react-router-dom';
 
+const ProtectedRoute = ({ children, allowedRoles }) => {
+  const token = localStorage.getItem('ss_token');
+  const userStr = localStorage.getItem('ss_user');
+  if (!token || !userStr) return <Navigate to="/login" replace />;
+  const user = JSON.parse(userStr);
+  const role = user.role || 'user';
+
+  if (allowedRoles && !allowedRoles.includes(role)) {
+    return <Navigate to={role === 'guardian' ? '/guardian-dashboard' : '/dashboard'} replace />;
+  }
+  return children;
+};
+
+export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/invite" element={<GuardianInviteLanding />} />
-        
-        {/* Protected User Routes */}
-        <Route path="/user" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-          <Route path="home" element={<UserHome />} />
-          <Route path="journey/:id" element={<UserHome />} />
-          <Route path="emergency" element={<EmergencyScreen />} />
-          <Route path="ai" element={<AIChat />} />
-          <Route path="invite-guardian" element={<InviteGuardian />} />
-          <Route path="learn" element={<LearningHub />} />
-          <Route path="learn/:lessonId" element={<LessonView />} />
-          <Route path="evidence" element={<EvidenceList />} />
-          <Route path="evidence/:incidentId" element={<EvidenceVault />} />
-          <Route path="profile" element={<ProfileDashboard />} />
-        </Route>
-        
-        {/* Protected Guardian Routes */}
-        <Route path="/guardian" element={<ProtectedRoute requireGuardian={true}><Layout /></ProtectedRoute>}>
-          <Route path="dashboard" element={<GuardianDashboard />} />
-        </Route>
+    <Routes>
+      <Route path="/" element={<Landing />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
 
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
+      {/* Main App Layout */}
+      <Route element={<Layout />}>
+        {/* User-Only Features */}
+        <Route path="/dashboard" element={<ProtectedRoute allowedRoles={['user']}><Dashboard /></ProtectedRoute>} />
+        <Route path="/ai-companion" element={<ProtectedRoute allowedRoles={['user']}><AIChat /></ProtectedRoute>} />
+        <Route path="/evidence-vault" element={<ProtectedRoute allowedRoles={['user']}><EvidenceVault /></ProtectedRoute>} />
+        <Route path="/emergency" element={<ProtectedRoute allowedRoles={['user']}><EmergencyCommandCenter /></ProtectedRoute>} />
+
+        {/* Features Both can conceptually use (map views etc) or restrict mapping to user only? 
+            Let's restrict mapping features as well if they shouldn't use it, except guardians might track wards. Let's let guardians view journey but no SOS triggers! 
+            Actually, the prompt insists users get all features and guardian only gets to watch. */}
+        <Route path="/live-journey" element={<ProtectedRoute allowedRoles={['user']}><LiveJourneyTracking /></ProtectedRoute>} />
+        <Route path="/community-map" element={<ProtectedRoute allowedRoles={['user']}><CommunitySafetyMap /></ProtectedRoute>} />
+
+        {/* Guardian-Only Dashboard */}
+        <Route path="/guardian-dashboard" element={<ProtectedRoute allowedRoles={['guardian']}><GuardianDashboard /></ProtectedRoute>} />
+
+        {/* Shared / Settings */}
+        <Route path="/profile" element={<ProtectedRoute allowedRoles={['user', 'guardian']}><Profile /></ProtectedRoute>} />
+      </Route>
+    </Routes>
   );
 }
-
-export default App;

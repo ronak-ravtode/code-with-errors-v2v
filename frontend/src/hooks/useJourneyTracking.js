@@ -14,26 +14,24 @@ export function useJourneyTracking(journeyId) {
     let batteryInterval;
 
     const startTracking = async () => {
-      // 1. Live Location Updates (always track for UI)
+      // 1. Live Location Updates (every 10 seconds or when position changes significantly)
       watchId = navigator.geolocation.watchPosition(
         async (position) => {
           const { latitude, longitude, speed } = position.coords;
           
-          // Update local store (always)
+          // Update local store
           setCurrentLocation({ lat: latitude, lng: longitude });
-
-          // Only send to backend if there is an active journey
-          if (!isJourneyActive || !journeyId) return;
 
           // Throttle to every 10 seconds to avoid spamming the backend
           const now = Date.now();
           if (lastSentRef.current && (now - lastSentRef.current.time < 10000)) {
-            // Check for massive deviation as an emergency
+            // Check for massive deviation as an emergency (mock simple deviation check)
             const distMoved = calculateDistance(
               latitude, longitude, 
               lastSentRef.current.lat, lastSentRef.current.lng
             );
             
+            // If moved > 500m in < 10s, something is very wrong or GPS glitch.
             if (distMoved > 500) {
               await axios.post('http://localhost:3000/api/journey/deviation', { journeyId });
             }
@@ -82,15 +80,14 @@ export function useJourneyTracking(journeyId) {
         }
       };
 
-      // Only start battery monitoring if journey is active
-      if (isJourneyActive) {
-        getBatteryStatus();
-        batteryInterval = setInterval(getBatteryStatus, 60000);
-      }
+      // Initial check and set interval
+      getBatteryStatus();
+      batteryInterval = setInterval(getBatteryStatus, 60000);
     };
 
-    // Always start tracking for UI, backend logic is conditionally handled inside
-    startTracking();
+    if (isJourneyActive) {
+      startTracking();
+    }
 
     return () => {
       if (watchId) navigator.geolocation.clearWatch(watchId);
